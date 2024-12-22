@@ -1,14 +1,66 @@
 <?xml version="1.0" encoding="utf-8"?>
-<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
-    android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    tools:context="org.opencv.samples.opencv_mobilenet.MainActivity">
+    android:layout_width="fill_parent"
+    android:layout_height="fill_parent"
+    android:orientation="vertical"
+    tools:context=".MainActivity">
 
-    <org.opencv.android.JavaCameraView
-        android:id="@+id/CameraView"
+    <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:visibility="visible" />
-</FrameLayout>
+        android:layout_height="379dp"
+        android:layout_weight="40"
+        android:orientation="vertical"
+        tools:context=".MainActivity">
+
+        <ImageView
+            android:id="@+id/imageView"
+            android:layout_width="wrap_content"
+            android:layout_height="408dp"
+            android:layout_weight="1"
+            android:foreground="@drawable/target"
+            app:srcCompat="@drawable/target" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="62dp"
+            android:gravity="center"
+            android:text="Laser Target"
+            android:textColor="#000000"
+            android:textSize="25dp"
+            android:textStyle="bold" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="fill_parent"
+        android:layout_height="212dp"
+        android:layout_weight="30"
+        android:orientation="vertical"
+        tools:context=".MainActivity">
+
+
+        <Button
+            android:id="@+id/buttonTirer"
+            android:layout_width="fill_parent"
+            android:layout_height="fill_parent"
+            android:layout_margin="10dp"
+            android:layout_weight="50"
+            android:background="@color/blueMaterialA100"
+            android:text="@string/tirer" />
+
+
+        <Button
+            android:id="@+id/buttonStatistiques"
+
+            android:layout_width="fill_parent"
+            android:layout_height="fill_parent"
+            android:layout_margin="10dp"
+            android:layout_weight="50"
+            android:background="@color/redMaterialA100"
+            android:text="@string/stats" />
+
+
+    </LinearLayout>
+
+</LinearLayout>

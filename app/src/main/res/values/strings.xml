@@ -1,3 +1,7 @@
 <resources>
     <string name="app_name">LaserTargetCompanion</string>
+    <string name="tirer">Tirer</string>
+    <string name="stats">Statistiques</string>
+    <string name="title_activity_statistics">StatisticsActivity</string>
+    <string name="title_activity_statistique">StatistiqueActivity</string>
 </resources>
