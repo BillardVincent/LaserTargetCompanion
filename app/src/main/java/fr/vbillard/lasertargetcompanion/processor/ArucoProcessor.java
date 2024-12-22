@@ -1,9 +1,9 @@
-package fr.vbillard.lasertargetcompanion;
+package fr.vbillard.lasertargetcompanion.processor;
 
 import static org.opencv.imgproc.Imgproc.COLOR_BGR2GRAY;
 import static org.opencv.imgproc.Imgproc.COLOR_BGR2RGB;
 
-import android.util.Log;
+import static fr.vbillard.lasertargetcompanion.utils.GeometryUtils.getMiddle;
 
 import org.opencv.core.Core;
 import org.opencv.core.Mat;
@@ -17,70 +17,48 @@ import org.opencv.objdetect.Objdetect;
 import java.util.ArrayList;
 import java.util.List;
 
-public class QRProcessor {
+import fr.vbillard.lasertargetcompanion.dto.TargetDetected;
+
+public class ArucoProcessor {
     private ArucoDetector detector;
     private static final String TAG = "QRProcessor";
     private Scalar LineColor = new Scalar(255, 0, 0);
     private Scalar FontColor = new Scalar(0, 0, 255);
 
-    public QRProcessor(boolean useArucoDetector) {
+    public ArucoProcessor(boolean useArucoDetector) {
             detector = new ArucoDetector();
 
     }
 
-    private boolean findQRs(Mat inputFrame, List<Mat> decodedInfo, Mat points,
-                           boolean tryDecode, boolean multiDetect) {
-
+    private boolean findQRs(Mat inputFrame, List<Mat> decodedInfo, Mat points) {
         Mat greyFrame = new Mat();
         Imgproc.cvtColor(inputFrame, greyFrame, COLOR_BGR2GRAY);
-
         detector.detectMarkers(greyFrame,decodedInfo, points);
         return !decodedInfo.isEmpty();
-
-        /*
-        if (multiDetect) {
-            if (tryDecode)
-                result = detector.detectAndDecodeMulti(inputFrame, decodedInfo, points);
-            else
-                result = detector.detectMulti(inputFrame, points);
-        }
-        else {
-            if(tryDecode) {
-                String s = detector.detectAndDecode(inputFrame, points);
-                result = !points.empty();
-                if (result)
-                    decodedInfo.add(s);
-            }
-            else {
-                result = detector.detect(inputFrame, points);
-            }
-        }
-        return result;
-         */
-
     }
 
+    // For debug
     private void renderQRs(Mat inputFrame, List<Mat> decodedInfo, MatOfPoint points) {
-
-        Log.i(TAG, "channels " + inputFrame.channels());
-            if (!decodedInfo.isEmpty()) {
+         if (!decodedInfo.isEmpty()) {
                 Objdetect.drawDetectedMarkers(inputFrame, decodedInfo, points);
         }
     }
 
     /* this method to be called from the outside. It processes the frame to find QR codes. */
-    public synchronized Mat handleFrame(Mat inputFrame, boolean tryDecode, boolean multiDetect) {
-        Core.flip(inputFrame.t(), inputFrame, 1); //mRgba.t() is the transpose
+    public synchronized TargetDetected handleFrame(Mat inputFrame) {
 
-        List<Mat> decodedInfo = new ArrayList<Mat>();
+        List<Mat> decodedInfo = new ArrayList<>();
         MatOfPoint points = new MatOfPoint();
-        boolean result = findQRs(inputFrame, decodedInfo, points, tryDecode, multiDetect);
+        boolean result = findQRs(inputFrame, decodedInfo, points);
 
-        Mat greyFrame = new Mat();
-        Imgproc.cvtColor(inputFrame, greyFrame, COLOR_BGR2RGB);
+        if (!result) {
+            return null;
+        }
 
-        if (result) {
-            renderQRs(greyFrame, decodedInfo, points);
+        TargetDetected targetDetected = null;
+            Mat greyFrame = new Mat();
+            Imgproc.cvtColor(inputFrame, greyFrame, COLOR_BGR2RGB);
+            // renderQRs(greyFrame, decodedInfo, points);
 
             List<Point> points2= new ArrayList<>();
 
@@ -95,9 +73,14 @@ public class QRProcessor {
                 points2.add(corners_xy.get(0));
             }
 
-            if (points2.size()>3) {
-                Point middle = getMiddle(getMiddle(points2.get(0), points2.get(1)), getMiddle(points2.get(2), points2.get(3)));
-                Imgproc.circle( greyFrame,
+        Imgproc.cvtColor(greyFrame, inputFrame, COLOR_BGR2RGB);
+
+        if (points2.size()==4) {
+            targetDetected = new TargetDetected();
+            targetDetected.addResult(points2);
+
+            Point middle = getMiddle(getMiddle(points2.get(0), points2.get(1)), getMiddle(points2.get(2), points2.get(3)));
+                Imgproc.circle( inputFrame,
                         middle,
                         400,
                         new Scalar( 0, 0, 255 ),
@@ -106,12 +89,9 @@ public class QRProcessor {
                         0 );
             }
 
-        }
+
         points.release();
-        return greyFrame;
+        return targetDetected;
     }
 
-    Point getMiddle(Point p1, Point p2){
-        return new Point ((p1.x+ p2.x)/2, (p1.y+ p2.y)/2);
-    }
 }
