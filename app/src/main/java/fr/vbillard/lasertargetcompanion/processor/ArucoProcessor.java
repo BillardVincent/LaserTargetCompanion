@@ -2,10 +2,8 @@ package fr.vbillard.lasertargetcompanion.processor;
 
 import static org.opencv.imgproc.Imgproc.COLOR_BGR2GRAY;
 import static org.opencv.imgproc.Imgproc.COLOR_BGR2RGB;
-
 import static fr.vbillard.lasertargetcompanion.utils.GeometryUtils.getMiddle;
 
-import org.opencv.core.Core;
 import org.opencv.core.Mat;
 import org.opencv.core.MatOfPoint;
 import org.opencv.core.Point;
