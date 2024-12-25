@@ -9,8 +9,13 @@ import org.opencv.core.MatOfPoint;
 import org.opencv.core.Point;
 import org.opencv.core.Scalar;
 import org.opencv.imgproc.Imgproc;
+import org.opencv.imgproc.Moments;
+
+import java.util.ArrayList;
+import java.util.List;
 
 import fr.vbillard.lasertargetcompanion.dto.TargetDetected;
+import fr.vbillard.lasertargetcompanion.utils.GeometryUtils;
 
 public class RedDotProcessor {
     private static final String TAG = "RedDotProcessor";
@@ -26,7 +31,7 @@ public class RedDotProcessor {
      * Valeurs hautes et basses de détection en bleu (opencv est en BGR)
      */
     private final static Scalar RANGE_HIGHT = new Scalar(130, 255, 255);
-    private final static Scalar RANGE_LOW = new Scalar(110, 100, 100);
+    private final static Scalar RANGE_LOW = new Scalar(110, 150, 150);
 
 
     public RedDotProcessor() {
@@ -51,38 +56,43 @@ public class RedDotProcessor {
         Imgproc.cvtColor(src, mat1, Imgproc.COLOR_BGR2HSV);
 
         Mat mask = Mat.zeros(src.size(), CV_8U);
-
-        Point topLeft = new Point(result.getTopLeftPoint().x - CROP, result.getTopLeftPoint().y + CROP);
-        Point topRight = new Point(result.getTopRightPoint().x - CROP, result.getTopRightPoint().y - CROP);
-        Point bottomLeft = new Point(result.getBottomLeftPoint().x + CROP, result.getTopLeftPoint().y + CROP);
-        Point bottomRight = new Point(result.getBottomRightPoint().x - CROP, result.getBottomRightPoint().y - CROP);
-
-        MatOfPoint points = new MatOfPoint(topLeft, topRight, bottomRight, bottomLeft, topLeft);
+        MatOfPoint points = new MatOfPoint(result.getTopLeftPoint(), result.getTopRightPoint(),
+                result.getBottomLeftPoint(), result.getBottomRightPoint(), result.getTopLeftPoint());
         Imgproc.fillConvexPoly(mask, points, WHITE);
 
         Core.inRange(mat1, RANGE_LOW, RANGE_HIGHT, mat2);
         Core.MinMaxLocResult mmG = Core.minMaxLoc(mat2, mask);
 
-        if (!mmG.maxLoc.equals(topLeft)) {
+        if (!mmG.maxLoc.equals(result.getTopLeftPoint()) && !mmG.maxLoc.equals(result.getBottomLeftPoint())) {
             Imgproc.circle(src, mmG.maxLoc, 30, new Scalar(0, 255, 0), 5, Imgproc.LINE_AA);
-            return mmG.maxLoc;
+
+            Mat matTransposed = GeometryUtils.transposeMat(mat2, result);
+            return Core.minMaxLoc(matTransposed).maxLoc;
+
         }
-
-         /*
-        mat1 = new Mat(src.size(), CvType.CV_16UC4);
-        mat2 = new Mat(src.size(), CvType.CV_16UC4);
-
-        Imgproc.cvtColor(src, mat1, Imgproc.COLOR_BGR2HSV);
-        Core.inRange(mat1, RANGE_LOW, RANGE_HIGHT, mat2);
-        Core.MinMaxLocResult mmG = Core.minMaxLoc(mat2);
-        if (!mmG.maxLoc.equals(new Point(0,0))) {
-            Imgproc.circle(src, mmG.maxLoc, 30, new Scalar(0, 255, 0), 5, Imgproc.LINE_AA);
-            Log.e(TAG, "Tir enregistré" + ++i);
-        }
-
-          */
 
         return null;
 
     }
+
+    /*
+    Point  contours(Mat src) {
+        final Mat dst = new Mat(src.rows(), src.cols(), src.type());
+        src.copyTo(dst);
+        Imgproc.cvtColor(dst, dst, Imgproc.COLOR_BGR2GRAY);
+        final List<MatOfPoint> points = new ArrayList<>();
+        final Mat hierarchy = new Mat();
+        Imgproc.findContours(dst, points, hierarchy, Imgproc.RETR_TREE, Imgproc.CHAIN_APPROX_SIMPLE);
+
+        Moments moments = Imgproc.moments(points[0]);
+
+        Point centroid = new Point();
+
+        centroid.x = moments.get_m10() / moments.get_m00();
+        centroid.y = moments.get_m01() / moments.get_m00();
+    }
+
+     */
+
+
 }

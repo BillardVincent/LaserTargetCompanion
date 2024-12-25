@@ -6,16 +6,21 @@ import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.WindowManager;
+import android.widget.Button;
 import android.widget.LinearLayout;
+import android.widget.ListView;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 
 import org.opencv.android.CameraActivity;
 import org.opencv.android.CameraBridgeViewBase;
+import org.opencv.android.JavaCamera2View;
 import org.opencv.android.OpenCVLoader;
 import org.opencv.core.Core;
 import org.opencv.core.Mat;
+import org.opencv.core.Point;
 
 import java.util.Collections;
 import java.util.List;
@@ -24,25 +29,28 @@ import fr.vbillard.lasertargetcompanion.R;
 import fr.vbillard.lasertargetcompanion.dto.TargetDetected;
 import fr.vbillard.lasertargetcompanion.processor.ArucoProcessor;
 import fr.vbillard.lasertargetcompanion.processor.RedDotProcessor;
-import fr.vbillard.lasertargetcompanion.utils.CustomCameraView;
+import fr.vbillard.lasertargetcompanion.utils.GeometryUtils;
 
 public class TargetActivity extends CameraActivity implements CameraBridgeViewBase.CvCameraViewListener {
 
-    private static final String  TAG = "QRdetection::Activity";
+    private static final String TAG = "QRdetection::Activity";
 
-    private CustomCameraView mOpenCvCameraView;
+    private JavaCamera2View mOpenCvCameraView;
     private ArucoProcessor mQRDetector;
     private RedDotProcessor redDotProcessor;
-    private MenuItem mItemQRCodeDetectorAruco;
-    private MenuItem             mItemQRCodeDetector;
-    private MenuItem             mItemTryDecode;
-    private MenuItem             mItemMulti;
+
+    private Button startResetBtn;
+    private Button stopBtn;
+    private TextView statusCible;
+
     TargetDetected result;
     private int frame = 0;
+    private int carrence = 0;
     MediaPlayer mp;
 
     LinearLayout cameraContainer;
-
+    //ListView listTirs;
+TextView score;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -56,12 +64,17 @@ public class TargetActivity extends CameraActivity implements CameraBridgeViewBa
             (Toast.makeText(this, "OpenCV initialization failed!", Toast.LENGTH_LONG)).show();
             return;
         }
-
         Log.d(TAG, "Creating and setting view");
         mp = MediaPlayer.create(this, R.raw.bip);
         setContentView(R.layout.activity_target);
+        startResetBtn = findViewById(R.id.startResetBtn);
+        stopBtn = findViewById(R.id.stopBtn);
+        //listTirs = findViewById(R.id.listTirs);
+        score = findViewById(R.id.score);
+        statusCible = findViewById(R.id.statusCible);
+
         cameraContainer = findViewById(R.id.cameraContainer);
-        mOpenCvCameraView = new CustomCameraView(this, -1);
+        mOpenCvCameraView = new JavaCamera2View(this, -1);
         mOpenCvCameraView.setMaxFrameSize(720, 720);
         mOpenCvCameraView.setVisibility(CameraBridgeViewBase.VISIBLE);
         mOpenCvCameraView.enableFpsMeter();
@@ -77,16 +90,14 @@ public class TargetActivity extends CameraActivity implements CameraBridgeViewBa
     }
 
     @Override
-    public void onPause()
-    {
+    public void onPause() {
         super.onPause();
         if (mOpenCvCameraView != null)
             mOpenCvCameraView.disableView();
     }
 
     @Override
-    public void onResume()
-    {
+    public void onResume() {
         super.onResume();
         if (mOpenCvCameraView != null) {
             mOpenCvCameraView.enableView();
@@ -107,21 +118,6 @@ public class TargetActivity extends CameraActivity implements CameraBridgeViewBa
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         Log.i(TAG, "called onCreateOptionsMenu");
-        mItemQRCodeDetectorAruco = menu.add("Aruco-based QR code detector");
-        mItemQRCodeDetectorAruco.setCheckable(true);
-        mItemQRCodeDetectorAruco.setChecked(true);
-
-        mItemQRCodeDetector = menu.add("Legacy QR code detector");
-        mItemQRCodeDetector.setCheckable(true);
-        mItemQRCodeDetector.setChecked(false);
-
-        mItemTryDecode = menu.add("Try to decode QR codes");
-        mItemTryDecode.setCheckable(true);
-        mItemTryDecode.setChecked(true);
-
-        mItemMulti = menu.add("Use multi detect/decode");
-        mItemMulti.setCheckable(true);
-        mItemMulti.setChecked(true);
 
         return true;
     }
@@ -129,19 +125,7 @@ public class TargetActivity extends CameraActivity implements CameraBridgeViewBa
     @Override
     public boolean onOptionsItemSelected(@NonNull MenuItem item) {
         Log.i(TAG, "Menu Item selected " + item);
-        if (item == mItemQRCodeDetector && !mItemQRCodeDetector.isChecked()) {
-            mQRDetector = new ArucoProcessor(true);
-            mItemQRCodeDetector.setChecked(true);
-            mItemQRCodeDetectorAruco.setChecked(false);
-        } else if (item == mItemQRCodeDetectorAruco && !mItemQRCodeDetectorAruco.isChecked()) {
-            mQRDetector = new ArucoProcessor(true);
-            mItemQRCodeDetector.setChecked(false);
-            mItemQRCodeDetectorAruco.setChecked(true);
-        } else if (item == mItemTryDecode) {
-            mItemTryDecode.setChecked(!mItemTryDecode.isChecked());
-        } else if (item == mItemMulti) {
-            mItemMulti.setChecked(!mItemMulti.isChecked());
-        }
+
         return true;
     }
 
@@ -159,15 +143,32 @@ public class TargetActivity extends CameraActivity implements CameraBridgeViewBa
         if (frame >= 30) {
             frame = 0;
             //return inputFrame;
-             result= mQRDetector.handleFrame(src);
-
-
+            result = mQRDetector.handleFrame(src);
         }
-        else{
 
+        if (result != null){
+            // todo cible en mouvement
+            statusCible.setText("Cible Acquise");
+        } else {
+            statusCible.setText("Cible non détectée");
         }
-        if (redDotProcessor.handleFrame(src, result) != null){
+
+        if (carrence != 0){
+            carrence--;
+            return src;
+        }
+
+        Point shoot = redDotProcessor.handleFrame(src, result);
+
+        if (shoot != null) {
+            carrence = 30;
             mp.start();
+            int scoreValue = GeometryUtils.getShootValue(shoot);
+            TextView tv = new TextView(this);
+            tv.setText(String.valueOf(scoreValue));
+            //listTirs.addFooterView(tv);
+            score.setText(String.valueOf(scoreValue));
+            Log.e(TAG, "Cible atteinte " + scoreValue);
         }
 
         return src;

@@ -22,31 +22,35 @@
             android:orientation="horizontal">
 
             <Button
-                android:id="@+id/button"
+                android:id="@+id/startResetBtn"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
                 android:text="Button" />
 
             <TextView
-                android:id="@+id/Etat"
+                android:id="@+id/statusCible"
                 android:layout_width="212dp"
                 android:layout_height="72dp"
                 android:gravity="center"
-                android:text="TextView" />
+                android:text="statusCible" />
 
             <Button
-                android:id="@+id/button2"
+                android:id="@+id/stopBtn"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
                 android:text="Button" />
         </LinearLayout>
 
-        <ListView
-            android:id="@+id/listTirs"
+        <TextView
+            android:id="@+id/score"
             android:layout_width="match_parent"
-            android:layout_height="match_parent" />
+            android:layout_height="268dp"
+            android:text=" "
+            android:textAlignment="center"
+            android:textSize="48sp" />
+
     </LinearLayout>
 
 </FrameLayout>

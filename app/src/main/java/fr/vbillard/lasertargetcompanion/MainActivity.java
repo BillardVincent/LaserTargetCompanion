@@ -2,7 +2,6 @@ package fr.vbillard.lasertargetcompanion;
 
 import android.content.Intent;
 import android.os.Bundle;
-import android.view.View;
 import android.widget.Button;
 
 import androidx.appcompat.app.AppCompatActivity;
@@ -12,37 +11,18 @@ import fr.vbillard.lasertargetcompanion.activities.TargetActivity;
 
 
 public class MainActivity extends AppCompatActivity {
-    private Button buttonProject = null;
-    private Button buttonStorage = null;
-
+    private Button buttonTirer = null;
+    private Button buttonStatistiques = null;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        buttonTirer = findViewById(R.id.buttonTirer);
+        buttonTirer.setOnClickListener(v -> startActivity(new Intent(MainActivity.this, TargetActivity.class)));
 
-        buttonProject = (Button) findViewById(R.id.buttonTirer);
-        buttonStorage = (Button) findViewById(R.id.buttonStatistiques);
-
-        buttonProject.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                Intent secondeActivite = new Intent(MainActivity.this, TargetActivity.class);
-
-
-                // Puis on lance l'intent !
-                startActivity(secondeActivite);
-            }
-        });
-        buttonStorage.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-
-                Intent secondeActivite = new Intent(MainActivity.this, StatistiquesActivity.class);
-
-                startActivity(secondeActivite);
-            }
-        });
+        buttonStatistiques = findViewById(R.id.buttonStatistiques);
+        buttonStatistiques.setOnClickListener(v -> startActivity(new Intent(MainActivity.this, StatistiquesActivity.class)));
     }
 }
